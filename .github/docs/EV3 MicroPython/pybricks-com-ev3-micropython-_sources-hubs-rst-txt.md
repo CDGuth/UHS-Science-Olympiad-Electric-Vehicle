@@ -1,0 +1,1 @@
+:mod:\`hubs \` -- Programmable Hubs ================================================ .. figure:: ../api/images/ev3brick.png :width: 40 % .. module:: pybricks.hubs .. include:: ../api/hubs\_ev3brick.inc
