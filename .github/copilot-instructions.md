@@ -3,8 +3,42 @@
 ## Terminal Enviornment
 PowerShell, so use powershell syntax for any terminal commands.
 
-## Project Overview
-This project is for the Science Olympiad 2026 "Electric Vehicle" event. The goal is to design an autonomous vehicle that travels a specific distance using electrical energy and stops as close as possible to a Target Point.
+## Project Description
+This project contains contains the program for the UHS's  Science Olympiad 2026 Electric Vehicle event device. The vehicle is built using LEGO MINDSTORMS EV3 components and programmed using the EV3 MicroPython library (Pybricks). The goal of the vehicle is to autonomously travel a specified distance and stop as close as possible to a target point as close to a given target time as possible, while adhering to event constraints.
+
+## Event Description
+The objective is to design and build a vehicle that travels a specific Target Distance and stops as close as possible to a Target Point within a Target Time.
+- **Constraints**: 
+  - Max 8 AA batteries (No Lithium/Lead-Acid).
+  - Max Length: 70.0 cm, Max Width: 35.0 cm.
+  - Must be started with a #2 pencil (ideally by pressing a button). Autonomous only.
+- **Scoring**:
+  - **Final Score**: Better of the 2 Run Scores + Final Score Penalties. Low score wins.
+  - **Run Score**: 100 + Distance Score + Time Score + Bonuses + Run Penalties.
+  - **Distance Score**: 2.0 pts/cm x Vehicle Distance error. (Failed Run = 2500 pts).
+  - **Time Score**: abs(Target Time - Run Time) (Failed Run = 0.00s).
+  - **Can Bonus**: -0.5 x (110 - Inside Can Distance).
+  - **Run Penalties**:
+    - Competition Violation: 150 points.
+    - Construction Violation: 300 points.
+  - **Final Score Penalties**:
+    - Vehicle not Impounded: 5000 points.
+  - **Tiebreakers**:
+    1. Better Vehicle Distance of the scored run.
+    2. Lower Time Score of the scored run.
+    3. Better Vehicle Distance of the non-scored run.
+    4. Better Time Score of the non-scored run.
+
+## Track Setup
+The track is on a smooth, level, hard surface.
+- **Start Point**: 5x2.5 cm tape marking the center.
+- **Target Point**: 5x2.5 cm tape at a distance of **7.0 to 10.0 meters** from start.
+- **Imaginary Center Line**: Connects Start and Target points.
+- **Bonus Line**: Tape placed **halfway** between Start and Target, extending perpendicular to the left.
+- **Bonus Cans**: Two cans placed on the Bonus Line.
+  - **Outer Can**: Placed by Event Supervisor exactly one meter perpendicular to the center line.
+  - **Inner Can**: Placed by the team along the Bonus Line (ideally close to the outer can to maximize bonus).
+  - Vehicle must pass between these cans to earn the bonus.
 
 ## Hardware Configuration
 The vehicle follows a standard car design with the following components:
