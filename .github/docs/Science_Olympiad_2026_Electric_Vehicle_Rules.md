@@ -258,7 +258,7 @@ See General Rules, Eye Protection & other Policies on http://www.soinc.org as th
 ```
 g. Target Distance is selected by the ES and will be between 7.00 and 10.00 meters. At Regionals/
 Invitationals the interval will be 0.25m, for States 0.10 m, and for National 0.01 m.
-h. Target Time is selected by the ES and will be between 10.0 and 20.0 seconds. The interval will be 0.
+h. Target Time is selected by the ES and will be between 10.0 and 20.0 seconds. The interval will be 0.1
 seconds for all tournaments.
 i. Vehicle Distance is a point-to-point measurement from the Vehicle Measurement Point to the Target
 Point, measured to the nearest 0.1 cm.
