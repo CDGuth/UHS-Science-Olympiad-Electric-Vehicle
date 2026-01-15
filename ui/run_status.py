@@ -1,11 +1,10 @@
-"""Run-time status screens for progress and summary."""
+"""Run-time status screens for progress."""
 
 from pybricks.media.ev3dev import Font  # pyright: ignore[reportMissingImports]
 from .common import SCREEN_WIDTH, SCREEN_HEIGHT
 
 TITLE_FONT = Font(size=16)
 VALUE_FONT = Font(size=14)
-SMALL_FONT = Font(size=10)
 
 
 def _draw_bar(screen, x, y, w, h, fraction):
@@ -31,19 +30,5 @@ def show_progress(ev3, mode, progress_fraction, time_s):
     screen.draw_text(6, 24, "Mode: {}".format(mode))
     screen.draw_text(6, 40, "Time: {:.2f}s".format(time_s))
     _draw_bar(screen, 6, 64, SCREEN_WIDTH - 12, 12, progress_fraction)
-
-
-def show_summary(ev3, mode, distance_m, time_s, target_time_s):
-    screen = ev3.screen
-    screen.clear()
-    screen.set_font(TITLE_FONT)
-    screen.draw_text(6, 4, "Run Summary")
-    screen.set_font(VALUE_FONT)
-    screen.draw_text(6, 24, "Mode: {}".format(mode))
-    screen.draw_text(6, 40, "Dist: {:.2f} m".format(distance_m))
-    screen.draw_text(6, 56, "Time: {:.2f} s".format(time_s))
-    if target_time_s is not None:
-        err = time_s - target_time_s
-        screen.draw_text(6, 72, "Time err: {:+.2f} s".format(err))
-    screen.set_font(SMALL_FONT)
-    screen.draw_text(6, 92, "Center to dismiss")
+    percent = int((max(0.0, min(1.0, progress_fraction)) * 100) // 5 * 5)
+    screen.draw_text(6, 84, "{}%".format(percent))

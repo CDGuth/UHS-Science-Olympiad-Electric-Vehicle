@@ -6,6 +6,7 @@ Contains physical constants, port assignments, control gains, and validation hel
 
 from pybricks.parameters import Port, Direction, Color # pyright: ignore[reportMissingImports]
 import math
+import log_utils
 
 # RUN MODES
 
@@ -50,7 +51,7 @@ PORT_GYRO_SENSOR = Port.S1
 
 # PID GAINS
 
-PID_HEADING_KP = 2.5
+PID_HEADING_KP = 0.5
 PID_HEADING_KI = 0.005
 PID_HEADING_KD = 0.5
 
@@ -79,15 +80,25 @@ MAX_DECEL_MM_S2 = 2000.0
 # Logging
 LOG_INTERVAL_MS = 500
 
+
+
 # Gyro calibration
-GYRO_CAL_DURATION_MS = 2000
+GYRO_CAL_DURATION_MS = 5000
+
+# Battery checks
+BATTERY_CHECK_ENABLED = True
+MIN_BATTERY_VOLTAGE_V = 7.0
+
+# Hardware precheck
+HARDWARE_PRECHECK_ENABLED = True
 
 
 # EVENT BOUNDS (for user input validation)
 
-MIN_TARGET_DISTANCE_M = 0.0  # Changed to 0.0 for testing purposes
+VALIDATION_ENABLED = True
+MIN_TARGET_DISTANCE_M = 7.0
 MAX_TARGET_DISTANCE_M = 10.0
-MIN_TARGET_TIME_S = 0.0  # Changed to 0.0 for testing purposes
+MIN_TARGET_TIME_S = 10.0
 MAX_TARGET_TIME_S = 20.0
 
 # UTILITIES
@@ -95,23 +106,34 @@ MAX_TARGET_TIME_S = 20.0
 def validate_config(config_dict):
     """
     Validates the user configuration against event rules.
-    Raises ValueError if inputs are out of bounds.
+    Returns (errors, warnings) where errors are dicts with message, key, and fixable.
     """
+    if not VALIDATION_ENABLED:
+        log_utils.log("Warning: Input validation is disabled.")
+        return [], []
+    errors = []
+    warnings = []
     d = config_dict["target_distance_m"]
     t = config_dict["target_time_s"]
     gap = config_dict.get("bonus_gap_m", 0.0)
 
     if not (MIN_TARGET_DISTANCE_M <= d <= MAX_TARGET_DISTANCE_M):
-        raise ValueError("Distance must be within event bounds (7.0-10.0 m).")
+        errors.append({"message": "Distance must be within event bounds (7.0-10.0 m).", "key": "target_distance_m", "fixable": True})
 
     if not (MIN_TARGET_TIME_S <= t <= MAX_TARGET_TIME_S):
-        raise ValueError("Time must be within event bounds (10.0-20.0 s).")
+        errors.append({"message": "Time must be within event bounds (10.0-20.0 s).", "key": "target_time_s", "fixable": True})
 
     if gap < 0.0 or gap > 1.0:
-        raise ValueError("Bonus gap must be between 0.0 m and 1.0 m (can spacing).")
+        errors.append({"message": "Bonus gap must be between 0.0 m and 1.0 m (can spacing).", "key": "bonus_gap_m", "fixable": True})
 
     if MAX_ACCEL_MM_S2 <= 0 or MAX_DECEL_MM_S2 <= 0 or MAX_SPEED_MM_S <= 0:
-        raise ValueError("Speed and acceleration limits must be positive.")
+        errors.append({"message": "Speed and acceleration limits must be positive.", "key": None, "fixable": False})
 
-    print("configuration validated")
-    return True
+    if errors:
+        log_utils.log("Configuration errors:")
+        for err in errors:
+            log_utils.log(err["message"])
+    else:
+        log_utils.log("Configuration validated")
+
+    return errors, warnings

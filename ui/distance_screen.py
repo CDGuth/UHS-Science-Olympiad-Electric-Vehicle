@@ -19,7 +19,7 @@ class DistanceScreen:
         else:
             hints = [
                 "Up/Down: +/-{:.2f} m".format(step),
-                "Hold>1s: faster", 
+                "Hold>3s: faster", 
                 "Center: mark complete",
             ]
         render_value_page(ev3, "Target Distance", value_text, hints, steps, current_index, state.get("completed", {}))
@@ -43,5 +43,6 @@ class DistanceScreen:
 
     def _adjust(self, state, delta):
         value = state.get("target_distance_m", 0.0) + delta
-        clamped = clamp(value, config.MIN_TARGET_DISTANCE_M, config.MAX_TARGET_DISTANCE_M)
-        state["target_distance_m"] = round(clamped, 3)
+        if config.VALIDATION_ENABLED:
+            value = clamp(value, config.MIN_TARGET_DISTANCE_M, config.MAX_TARGET_DISTANCE_M)
+        state["target_distance_m"] = round(value, 3)

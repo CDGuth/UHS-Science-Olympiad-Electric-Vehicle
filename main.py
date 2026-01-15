@@ -1,6 +1,8 @@
 #!/usr/bin/env pybricks-micropython
 """Main execution entry point for the Science Olympiad Electric Vehicle 2026."""
 
+from pybricks.hubs import EV3Brick  # pyright: ignore[reportMissingImports]
+from pybricks.ev3devices import Motor, GyroSensor  # pyright: ignore[reportMissingImports]
 from pybricks.parameters import Button  # pyright: ignore[reportMissingImports]
 from pybricks.tools import wait, StopWatch  # pyright: ignore[reportMissingImports]
 
@@ -10,41 +12,81 @@ from vehicle import Car
 from strategies import get_strategy
 from run_logger import RunLogger
 from ui.ui_flow import collect_run_config
-from ui.run_status import show_progress, show_summary
+from ui.run_status import show_progress
+from ui.run_summary_screen import show_summary
+from ui.common import show_warning
+import log_utils
+
+
+def _port_label(port):
+    return str(port)
+
+
+def precheck_devices(ev3):
+    missing = []
+
+    if config.BATTERY_CHECK_ENABLED:
+        voltage_v = ev3.battery.voltage() / 1000.0
+        if voltage_v < config.MIN_BATTERY_VOLTAGE_V:
+            msg = "Battery too low: {:.2f} V (min {:.2f} V).".format(voltage_v, config.MIN_BATTERY_VOLTAGE_V)
+            show_warning(ev3, "Battery Low", [msg])
+            log_utils.log(msg)
+            raise RuntimeError(msg)
+        log_utils.log("Battery check passed: {:.2f} V.".format(voltage_v))
+
+    def try_create(name, ctor):
+        try:
+            ctor()
+        except Exception:
+            missing.append(name)
+
+    try_create("Left motor on {}".format(_port_label(config.PORT_LEFT_MOTOR)), lambda: Motor(config.PORT_LEFT_MOTOR))
+    try_create("Right motor on {}".format(_port_label(config.PORT_RIGHT_MOTOR)), lambda: Motor(config.PORT_RIGHT_MOTOR))
+    try_create("Steering motor on {}".format(_port_label(config.PORT_STEER_MOTOR)), lambda: Motor(config.PORT_STEER_MOTOR))
+    try_create("Gyro on {}".format(_port_label(config.PORT_GYRO_SENSOR)), lambda: GyroSensor(config.PORT_GYRO_SENSOR))
+
+    if missing:
+        lines = ["Device missing:"] + missing
+        show_warning(ev3, "Device Error", lines)
+        msg = "Missing devices: {}".format("; ".join(missing))
+        log_utils.log(msg)
+        raise RuntimeError(msg)
+
+    log_utils.log("Device precheck passed.")
 
 
 def main():
-    car = Car(auto_calibrate=not user_input.USE_RUNTIME_INPUT)
+    ev3 = EV3Brick()
+    ev3.light.off()
+    if not config.HARDWARE_PRECHECK_ENABLED:
+        log_utils.log("Warning: Hardware precheck is disabled.")
+    if not config.BATTERY_CHECK_ENABLED:
+        log_utils.log("Warning: Battery voltage check is disabled.")
+    if config.HARDWARE_PRECHECK_ENABLED:
+        precheck_devices(ev3)
+    car = Car(auto_calibrate=False, ev3=ev3)
     logger = RunLogger()
 
     run_config = user_input.get_default_run_config()
-    if user_input.USE_RUNTIME_INPUT:
-        run_config = collect_run_config(car.ev3, car, run_config)
+    run_config = collect_run_config(car.ev3, car, run_config, runtime_input=user_input.USE_RUNTIME_INPUT)
 
-    config.validate_config(run_config)
+    if not user_input.USE_RUNTIME_INPUT:
+        errors, warnings = config.validate_config(run_config)
+        if errors or warnings:
+            show_warning(car.ev3, "Config Warning", [e["message"] for e in errors] + warnings)
     strategy = get_strategy(run_config)
-    print("strategy initialized: {}".format(run_config["mode"]))
-    print("target: {}m in {}s".format(run_config["target_distance_m"], run_config["target_time_s"]))
+    log_utils.log("Strategy initialized: {}".format(run_config["mode"]))
+    log_utils.log("Target: {}m in {}s".format(run_config["target_distance_m"], run_config["target_time_s"]))
     if run_config["mode"] == config.MODE_BONUS:
-        print("bonus gap: {}m".format(run_config["bonus_gap_m"]))
-
-    car.ev3.light.on(config.Color.GREEN)
+        log_utils.log("Bonus gap: {}m".format(run_config["bonus_gap_m"]))
     wait(200)
 
     event_timer = StopWatch()
     event_timer.reset()
     logger.event(event_timer.time(), "ready")
-    print("press center button to start the run")
-
-    while Button.CENTER not in car.ev3.buttons.pressed():
-        wait(10)
-
-    while Button.CENTER in car.ev3.buttons.pressed():
-        wait(10)
-
-    print("run start")
+    log_utils.log("Run start.")
     logger.event(event_timer.time(), "start")
-    car.ev3.light.on(config.Color.RED)
+    car.ev3.light.off()
 
     car.reset_odometry()
     run_timer = StopWatch(); run_timer.reset()
@@ -62,6 +104,11 @@ def main():
         loop_ms = run_timer.time()
         time_s = loop_ms / 1000.0
 
+        if (loop_ms // 500) % 2 == 0:
+            car.ev3.light.on(config.Color.GREEN)
+        else:
+            car.ev3.light.off()
+
         car.update_sensors()
 
         dist_mm = car.get_distance()
@@ -73,7 +120,7 @@ def main():
         if loop_ms - last_log_ms >= log_interval_ms:
             heading = car.get_heading()
             logger.state(loop_ms, dist_mm, target_v, target_h, heading, car.drift_rate_dps)
-            print("t: {:.2f}s, d: {:.1f}mm, v: {:.1f}mm/s, h: {:.1f}deg".format(time_s, dist_mm, target_v, heading))
+            log_utils.log("Telemetry: t={:.2f}s, d={:.1f}mm, v={:.1f}mm/s, h={:.1f}deg".format(time_s, dist_mm, target_v, heading))
             last_log_ms = loop_ms
 
         if loop_ms - last_progress_ms >= 150:
@@ -84,7 +131,7 @@ def main():
         # Stall detection: if movement < threshold over window, stop.
         if loop_ms - last_move_ms >= stall_window_ms:
             if abs(dist_mm - last_dist_mm) < stall_threshold_mm:
-                print("stall detected")
+                log_utils.log("Stall detected.")
                 logger.event(event_timer.time(), "stall_detected")
                 break
             last_move_ms = loop_ms
@@ -92,7 +139,7 @@ def main():
 
         # Absolute runtime guard
         if loop_ms >= max_run_ms:
-            print("timeout guard activated")
+            log_utils.log("Timeout guard activated.")
             logger.event(event_timer.time(), "timeout_guard")
             break
 
@@ -100,21 +147,19 @@ def main():
 
     logger.event(event_timer.time(), "complete")
     car.stop(brake=True)
+    car.ev3.light.on(config.Color.RED)
 
     total_time_s = loop_ms / 1000.0
-    print("run complete")
-    print("distance: {:.3f} m".format(dist_mm / 1000.0))
-    print("time: {:.3f} s".format(total_time_s))
+    log_utils.log("Run complete.")
+    log_utils.log("Distance: {:.3f} m".format(dist_mm / 1000.0))
+    log_utils.log("Time: {:.3f} s".format(total_time_s))
     if "target_time_s" in run_config:
         error_s = total_time_s - run_config["target_time_s"]
-        print("time err: {:.3f} s".format(error_s))
+        log_utils.log("Time err: {:.3f} s".format(error_s))
     show_summary(car.ev3, run_config.get("mode"), dist_mm / 1000.0, total_time_s, run_config.get("target_time_s"))
-    print("press center to dismiss summary")
+    log_utils.log("Press center to dismiss summary.")
     while Button.CENTER not in car.ev3.buttons.pressed():
         wait(20)
-    car.ev3.light.on(config.Color.ORANGE)
-    car.ev3.speaker.beep()
-    wait(5000)
 
 
 if __name__ == "__main__":

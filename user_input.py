@@ -6,18 +6,18 @@ or False to use the values defined below without prompting.
 
 import config
 
-# When True, the brick UI will collect run settings before each run.
+# When True, the brick UI will collect run settings before each run (STATIC_RUN_CONFIG provides the default values).
 # When False, the STATIC_RUN_CONFIG below is used directly.
 USE_RUNTIME_INPUT = True
 
-# Event level determines allowed distance increment per rules.
+# Event level determines allowed distance increment per the rules.
 # Options: "REGIONAL", "INVITATIONAL", "STATE", "NATIONAL"
-EVENT_LEVEL = "INVITATIONAL"
+EVENT_LEVEL = "STATE"
 
 STATIC_RUN_CONFIG = {
     "mode": config.MODE_STRAIGHT,
-    "target_distance_m": 1.0,
-    "target_time_s": 4.0,
+    "target_distance_m": 7.0,
+    "target_time_s": 10,
     # Distance between outer can inside edge (at 1.0 m) and inside can outside edge (0.0-1.0 m range)
     "bonus_gap_m": 1.0,
 }
@@ -43,4 +43,4 @@ def get_distance_step():
 
 
 def get_time_step():
-    return 0.10
+    return 0.50

@@ -1,5 +1,6 @@
 """Bonus can gap selection screen."""
 
+import config
 from .common import clamp, render_value_page, mark_complete, mark_incomplete, is_complete
 
 
@@ -17,7 +18,7 @@ class BonusScreen:
         else:
             hints = [
                 "Up/Down: +/-{:.2f} m".format(step),
-                "Hold>1s: faster", 
+                "Hold>3s: faster", 
                 "Center: mark complete",
             ]
         render_value_page(ev3, "Bonus Gap", value_text, hints, steps, current_index, state.get("completed", {}))
@@ -41,5 +42,6 @@ class BonusScreen:
 
     def _adjust(self, state, delta):
         value = state.get("bonus_gap_m", 0.0) + delta
-        clamped = clamp(value, 0.0, 1.0)
-        state["bonus_gap_m"] = round(clamped, 3)
+        if config.VALIDATION_ENABLED:
+            value = clamp(value, 0.0, 1.0)
+        state["bonus_gap_m"] = round(value, 3)

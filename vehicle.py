@@ -5,11 +5,12 @@ from pybricks.ev3devices import Motor, GyroSensor  # pyright: ignore[reportMissi
 from pybricks.parameters import Port, Stop, Direction  # pyright: ignore[reportMissingImports]
 from pybricks.tools import wait, StopWatch  # pyright: ignore[reportMissingImports]
 import config
+import log_utils
 
 
 class Car:
-    def __init__(self, auto_calibrate=True):
-        self.ev3 = EV3Brick()
+    def __init__(self, auto_calibrate=False, ev3=None):
+        self.ev3 = ev3 if ev3 is not None else EV3Brick()
 
         drive_dir = Direction.COUNTERCLOCKWISE if config.INVERT_DRIVE else Direction.CLOCKWISE
         steer_dir = Direction.COUNTERCLOCKWISE if config.INVERT_STEERING else Direction.CLOCKWISE
@@ -104,10 +105,10 @@ class Car:
         self.steer_motor.track_target(0)
         self.steer_motor.stop(Stop.HOLD)
 
-    def calibrate_gyro_drift(self, duration_ms=None):
+    def calibrate_gyro_drift(self, duration_ms=None, progress_cb=None):
         """Calibrates gyro drift; safe to call multiple times."""
         cal_ms = duration_ms if duration_ms is not None else config.GYRO_CAL_DURATION_MS
-        print("calibrating gyro drift for {} ms... !!!DO NOT MOVE THE VEHICLE!!!".format(cal_ms))
+        log_utils.log("Starting gyro calibration for {:.1f} s. Do not move the vehicle.".format(cal_ms / 1000.0))
         self.ev3.light.off()
         blink_timer = StopWatch(); blink_timer.reset()
         self.gyro.reset_angle(0)
@@ -130,9 +131,13 @@ class Car:
             samples += 1
             last_angle = angle
 
+            if progress_cb:
+                progress_cb(timer.time() / cal_ms)
+
         self.ev3.light.off()
         self.drift_rate_dps = drift_sum / max(1, samples)
-        print("gyro calibration complete")
-        print("measured drift: {:.4f} deg/s".format(self.drift_rate_dps))
+        if progress_cb:
+            progress_cb(1.0)
+        log_utils.log("Gyro calibration complete; drift={:.4f} deg/s".format(self.drift_rate_dps))
         self.heading_timer.reset()
         return self.drift_rate_dps

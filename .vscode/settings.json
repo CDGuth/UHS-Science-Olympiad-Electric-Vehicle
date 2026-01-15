@@ -3,6 +3,8 @@
 	"files.eol": "\n",
 	"debug.openDebug": "neverOpen",
 	"python.linting.enabled": true,
-//	"python.languageServer": "None",
-	"terminal.integrated.defaultProfile.windows": "PowerShell"
+	"python.languageServer": "Pylance",
+	"terminal.integrated.defaultProfile.windows": "PowerShell",
+	"python.analysis.autoImportCompletions": true,
+	"python.analysis.typeCheckingMode": "standard"
 }

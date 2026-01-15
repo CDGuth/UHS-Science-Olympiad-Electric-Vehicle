@@ -1,11 +1,12 @@
 """Shared UI helpers for EV3 brick screens."""
 
-from pybricks.parameters import Color  # pyright: ignore[reportMissingImports]
+from pybricks.parameters import Color, Button  # pyright: ignore[reportMissingImports]
 from pybricks.media.ev3dev import Font  # pyright: ignore[reportMissingImports]
+from pybricks.tools import wait  # pyright: ignore[reportMissingImports]
 
 SCREEN_WIDTH = 178
 SCREEN_HEIGHT = 128
-INDICATOR_Y = 104
+INDICATOR_Y = 115
 INDICATOR_SIZE = 6
 INDICATOR_MARGIN = 10
 INDICATOR_THICKNESS = 2
@@ -14,6 +15,39 @@ TITLE_FONT = Font(size=16)
 VALUE_FONT = Font(size=18)
 DEFAULT_FONT = Font(size=14)
 HINT_FONT = Font(size=10)
+
+
+def _wrap_line(line, width):
+    words = line.split()
+    if not words:
+        return [""]
+    rows = []
+    current = words[0]
+    for word in words[1:]:
+        if len(current) + 1 + len(word) <= width:
+            current += " " + word
+        else:
+            rows.append(current)
+            current = word
+    rows.append(current)
+    # Handle very long single words
+    flat_rows = []
+    for row in rows:
+        if len(row) <= width:
+            flat_rows.append(row)
+        else:
+            start = 0
+            while start < len(row):
+                flat_rows.append(row[start:start + width])
+                start += width
+    return flat_rows
+
+
+def wrap_text_lines(lines, width=24):
+    wrapped = []
+    for line in lines:
+        wrapped.extend(_wrap_line(line, width))
+    return wrapped
 
 
 def clamp(value, min_value, max_value):
@@ -122,9 +156,9 @@ def draw_indicator_bar(ev3, steps, current_index, completed_map):
         elif shape == "play":
             draw_play_shape(screen, x, INDICATOR_Y, INDICATOR_SIZE, filled)
 
-        # Highlight current step with a small underline mark.
+        # Highlight current step with a thicker underline mark, slightly lower for breathing room.
         if i == current_index:
-            screen.draw_line(x - INDICATOR_SIZE, INDICATOR_Y + INDICATOR_SIZE + 2, x + INDICATOR_SIZE, INDICATOR_Y + INDICATOR_SIZE + 2)
+            _draw_hline_thick(screen, x - INDICATOR_SIZE, x + INDICATOR_SIZE, INDICATOR_Y + INDICATOR_SIZE + 5, INDICATOR_THICKNESS + 1)
 
 
 def render_value_page(ev3, title, value_text, hint_lines, steps, current_index, completed_map):
@@ -155,3 +189,28 @@ def is_complete(state, key):
 
 def mark_incomplete(state, key):
     state.setdefault("completed", {})[key] = False
+
+
+def show_warning(ev3, title, lines):
+    """Display a blocking warning dialog and wait for center press."""
+    screen = ev3.screen
+    screen.clear()
+    screen.set_font(TITLE_FONT)
+    screen.draw_text(6, 4, title)
+    screen.set_font(DEFAULT_FONT)
+
+    wrapped = wrap_text_lines(lines, width=24)
+    y = 26
+    for line in wrapped:
+        screen.draw_text(6, y, line)
+        y += 14
+
+    screen.set_font(HINT_FONT)
+    screen.draw_text(6, SCREEN_HEIGHT - 14, "Center to continue")
+
+    while True:
+        if Button.CENTER in ev3.buttons.pressed():
+            break
+        wait(50)
+    while Button.CENTER in ev3.buttons.pressed():
+        wait(50)

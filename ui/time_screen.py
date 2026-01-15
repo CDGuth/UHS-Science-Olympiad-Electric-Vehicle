@@ -19,7 +19,7 @@ class TimeScreen:
         else:
             hints = [
                 "Up/Down: +/-{:.2f} s".format(step),
-                "Hold>1s: faster", 
+                "Hold>3s: faster", 
                 "Center: mark complete",
             ]
         render_value_page(ev3, "Target Time", value_text, hints, steps, current_index, state.get("completed", {}))
@@ -43,5 +43,6 @@ class TimeScreen:
 
     def _adjust(self, state, delta):
         value = state.get("target_time_s", 0.0) + delta
-        clamped = clamp(value, config.MIN_TARGET_TIME_S, config.MAX_TARGET_TIME_S)
-        state["target_time_s"] = round(clamped, 3)
+        if config.VALIDATION_ENABLED:
+            value = clamp(value, config.MIN_TARGET_TIME_S, config.MAX_TARGET_TIME_S)
+        state["target_time_s"] = round(value, 3)

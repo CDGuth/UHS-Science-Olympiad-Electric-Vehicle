@@ -4,6 +4,7 @@ Provides velocity curves and path length calculations.
 """
 
 import math
+import log_utils
 
 
 class SCurveProfile:
@@ -25,7 +26,7 @@ class SCurveProfile:
 
         self.t_end_acc = self.t_acc
         self.t_start_dec = self.t_acc + self.t_cruise
-        print("profile: v_max {:.1f} mm/s, t_acc: {:.2f}s, t_cruise: {:.2f}s, t_dec: {:.2f}s".format(
+        log_utils.log("Profile: v_max={:.1f} mm/s, t_acc={:.2f}s, t_cruise={:.2f}s, t_dec={:.2f}s".format(
             self.v_max, self.t_acc, self.t_cruise, self.t_dec))
 
     def _solve_peak_velocity(self):

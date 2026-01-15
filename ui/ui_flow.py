@@ -5,14 +5,17 @@ from pybricks.tools import wait, StopWatch  # pyright: ignore[reportMissingImpor
 
 import config
 import user_input
+import log_utils
 
 from .mode_screen import ModeScreen
 from .distance_screen import DistanceScreen
 from .time_screen import TimeScreen
 from .bonus_screen import BonusScreen
 from .gyro_screen import GyroScreen
-from .summary_screen import SummaryScreen
-from .common import mark_complete
+from .steering_screen import SteeringScreen
+from .confirmation_screen import ConfirmationScreen
+from .ready_screen import ReadyScreen
+from .common import mark_complete, show_warning
 
 
 def _debounce_buttons(ev3):
@@ -20,18 +23,22 @@ def _debounce_buttons(ev3):
         wait(50)
 
 
-def collect_run_config(ev3, car, initial_config):
+def collect_run_config(ev3, car, initial_config, runtime_input=True):
     """
     Interactive flow that returns a run_config dict.
     Screens use Up/Down for value changes and Left/Right to navigate.
     """
     def build_screens(current_mode):
-        base = [ModeScreen(), DistanceScreen(), TimeScreen()]
-        if current_mode == config.MODE_BONUS:
-            base.append(BonusScreen())
-        base.append(GyroScreen(car))
-        base.append(SummaryScreen())
-        return base
+        screens = []
+        if runtime_input:
+            screens.extend([ModeScreen(), DistanceScreen(), TimeScreen()])
+            if current_mode == config.MODE_BONUS:
+                screens.append(BonusScreen())
+        screens.append(GyroScreen(car))
+        screens.append(SteeringScreen(car))
+        screens.append(ConfirmationScreen())
+        screens.append(ReadyScreen())
+        return screens
 
     state = dict(initial_config)
     state.setdefault("bonus_gap_m", 0.0)
@@ -42,6 +49,38 @@ def collect_run_config(ev3, car, initial_config):
     state["time_fast_step"] = 1.0
     state["bonus_step"] = 0.05
     state["bonus_fast_step"] = 0.25
+
+    key_labels = {
+        "mode": "Run Mode",
+        "target_distance_m": "Target Distance",
+        "target_time_s": "Target Time",
+        "bonus_gap_m": "Bonus Gap",
+        "gyro_calibration": "Gyro Calibration",
+        "steering_calibration": "Steering Align",
+        "confirm_run": "Confirm Run",
+    }
+
+    def current_run_config(state):
+        return {
+            "mode": state.get("mode"),
+            "target_distance_m": state.get("target_distance_m"),
+            "target_time_s": state.get("target_time_s"),
+            "bonus_gap_m": state.get("bonus_gap_m", 0.0),
+        }
+
+    def first_incomplete_index(screens, state):
+        for i, scr in enumerate(screens):
+            if scr.key in ("confirm_run", "ready_run"):
+                continue
+            if not state.get("completed", {}).get(scr.key, False):
+                return i
+        return 0
+
+    def ready_index(screens):
+        for i, scr in enumerate(screens):
+            if scr.key == "ready_run":
+                return i
+        return len(screens) - 1
 
     index = 0
     timer = StopWatch(); timer.reset()
@@ -54,7 +93,8 @@ def collect_run_config(ev3, car, initial_config):
 
     while True:
         screens = build_screens(state.get("mode", config.MODE_STRAIGHT))
-        steps = [{"key": s.key, "shape": s.shape} for s in screens]
+        nav_screens = [s for s in screens if getattr(s, "show_in_nav", True)]
+        steps = [{"key": s.key, "shape": s.shape} for s in nav_screens]
         state.setdefault("completed", {})
         for s in screens:
             state["completed"].setdefault(s.key, False)
@@ -62,7 +102,13 @@ def collect_run_config(ev3, car, initial_config):
         if index >= len(screens):
             index = len(screens) - 1
 
-        screens[index].render(ev3, state, steps, index)
+        current_screen = screens[index]
+        if current_screen in nav_screens:
+            nav_index = nav_screens.index(current_screen)
+        else:
+            nav_index = len(nav_screens) - 1 if nav_screens else 0
+
+        current_screen.render(ev3, state, steps, nav_index)
         wait(debounce_ms)
         pressed = ev3.buttons.pressed()
         now = timer.time()
@@ -117,7 +163,6 @@ def collect_run_config(ev3, car, initial_config):
                 press_start[button] = None
                 last_repeat[button] = 0
 
-        current_screen = screens[index]
         handle_step(Button.UP, current_screen, lambda step: current_screen.on_up(state, step))
         handle_step(Button.DOWN, current_screen, lambda step: current_screen.on_down(state, step))
 
@@ -125,13 +170,59 @@ def collect_run_config(ev3, car, initial_config):
         if Button.CENTER in pressed:
             action = screens[index].on_center(state)
             _debounce_buttons(ev3)
-            if action == "start":
+            if action == "confirm":
+                missing = [
+                    scr.key
+                    for scr in screens
+                    if scr.key not in ("confirm_run", "ready_run")
+                    and not state.get("completed", {}).get(scr.key, False)
+                ]
+                if missing:
+                    lines = ["Complete before confirm:"] + [key_labels.get(k, k) for k in missing]
+                    show_warning(ev3, "Complete Steps", lines)
+                    index = first_incomplete_index(screens, state)
+                    continue
+
+                run_config = current_run_config(state)
+                errors, warnings = config.validate_config(run_config)
+
+                if errors and runtime_input:
+                    show_warning(ev3, "Fix Config", [e["message"] for e in errors])
+                    fatal_errors = [e for e in errors if not e.get("fixable")]
+                    for err in errors:
+                        key = err.get("key")
+                        if err.get("fixable") and key and key in state.get("completed", {}):
+                            state["completed"][key] = False
+                    if fatal_errors:
+                        raise RuntimeError("Non-fixable config error: {}".format(
+                            "; ".join(e.get("message", "unknown") for e in fatal_errors)
+                        ))
+                    index = first_incomplete_index(screens, state)
+                    continue
+
+                if errors and not runtime_input:
+                    show_warning(ev3, "Config Warning", [e["message"] for e in errors])
+
+                if warnings:
+                    show_warning(ev3, "Config Warning", warnings)
+
                 mark_complete(state, screens[index].key)
-                return {
-                    "mode": state.get("mode"),
-                    "target_distance_m": state.get("target_distance_m"),
-                    "target_time_s": state.get("target_time_s"),
-                    "bonus_gap_m": state.get("bonus_gap_m", 0.0),
-                }
+                log_utils.log(
+                    "Run confirmed: mode={}, dist={:.2f}m, time={:.2f}s, gap={:.2f}m".format(
+                        run_config.get("mode"),
+                        run_config.get("target_distance_m", 0.0),
+                        run_config.get("target_time_s", 0.0),
+                        run_config.get("bonus_gap_m", 0.0),
+                    )
+                )
+                index = ready_index(screens)
+                continue
+
+            if action == "start":
+                if not state.get("completed", {}).get("confirm_run", False):
+                    show_warning(ev3, "Confirm First", ["Confirm run profile first."])
+                    index = ready_index(screens) - 1
+                    continue
+                return current_run_config(state)
 
     return initial_config
