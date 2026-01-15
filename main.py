@@ -99,6 +99,8 @@ def main():
     stall_window_ms = 1200
     last_move_ms = 0
     last_dist_mm = 0.0
+    loop_ms = 0
+    dist_mm = 0.0
 
     while not strategy.is_finished(run_timer.time() / 1000.0):
         loop_ms = run_timer.time()
