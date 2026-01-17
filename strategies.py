@@ -8,7 +8,8 @@ class RunStrategy:
     """Base class for run strategies."""
     def __init__(self, run_config):
         self.config = run_config
-        self.target_dist_mm = run_config["target_distance_m"] * 1000.0
+        self.target_distance_m = run_config["target_distance_m"] + config.DISTANCE_CORRECTION_M
+        self.target_dist_mm = self.target_distance_m * 1000.0
         self.target_time_s = run_config["target_time_s"]
 
         self.total_path_length = self._calculate_path_length()

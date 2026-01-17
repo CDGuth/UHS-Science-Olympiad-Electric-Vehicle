@@ -40,6 +40,9 @@ MAX_STEER_ANGLE = 45  # Degrees left/right from center
 CAN_DIAMETER_M = 0.075  # rules: 7.0 to 8.0 cm
 OUTER_CAN_INSIDE_EDGE_M = 1.0
 
+# Calibration offsets
+DISTANCE_CORRECTION_M = 0.2  # Added to the requested target distance to correct systematic bias
+
 
 # PORT ASSIGNMENTS
 
@@ -51,9 +54,9 @@ PORT_GYRO_SENSOR = Port.S1
 
 # PID GAINS
 
-PID_HEADING_KP = 0.5
-PID_HEADING_KI = 0.005
-PID_HEADING_KD = 0.5
+PID_HEADING_KP = 7
+PID_HEADING_KI = 0.5
+PID_HEADING_KD = 0.1
 
 # Motion constraints
 """
@@ -73,8 +76,8 @@ The limits set below are comfortably below the tested maximums.
 Deceleration is purposely kept low to avoid wheel slip and
 to improve precision / accuracy of the run in general.
 """
-MAX_SPEED_MM_S = 1000.0
-MAX_ACCEL_MM_S2 = 600.0
+MAX_SPEED_MM_S = 1400.0
+MAX_ACCEL_MM_S2 = 775.0
 MAX_DECEL_MM_S2 = 2000.0
 
 # Logging

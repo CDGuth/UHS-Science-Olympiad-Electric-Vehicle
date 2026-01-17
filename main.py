@@ -75,8 +75,14 @@ def main():
         if errors or warnings:
             show_warning(car.ev3, "Config Warning", [e["message"] for e in errors] + warnings)
     strategy = get_strategy(run_config)
+    corrected_distance_m = run_config["target_distance_m"] + config.DISTANCE_CORRECTION_M
     log_utils.log("Strategy initialized: {}".format(run_config["mode"]))
-    log_utils.log("Target: {}m in {}s".format(run_config["target_distance_m"], run_config["target_time_s"]))
+    log_utils.log("Target: {:.3f}m (raw {:.3f}m, corr {:+.3f}m) in {:.2f}s".format(
+        corrected_distance_m,
+        run_config["target_distance_m"],
+        config.DISTANCE_CORRECTION_M,
+        run_config["target_time_s"],
+    ))
     if run_config["mode"] == config.MODE_BONUS:
         log_utils.log("Bonus gap: {}m".format(run_config["bonus_gap_m"]))
     wait(200)
