@@ -163,6 +163,10 @@ Class to interact with PID controller and settings. Accessed via `.control` attr
 ### Planning & Tracking
 - **`manage_todo_list`**: ALWAYS initialize a todo list for multi-step tasks. Mark items as `in-progress` before working and `completed` immediately after.
 
+### Coding Standards
+- **Configuration**: NO MAGIC NUMBERS. All configurable values (constants, loop times, physical parameters) must be defined in `config.py` and imported.
+- **MicroPython**: Remember this is MicroPython on EV3. Resources are limited.
+
 ## Documentation & References
 
 ### EV3 MicroPython Documentation

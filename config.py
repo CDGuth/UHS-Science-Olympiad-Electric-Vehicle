@@ -13,12 +13,30 @@ import log_utils
 MODE_STRAIGHT = "STRAIGHT"
 MODE_BONUS = "BONUS"
 
+# Constants
+MM_PER_METER = 1000.0
+MS_PER_SECOND = 1000.0
+
 
 # ROBOT PHYSICAL CONSTANTS
 
+# Steering Configuration
+STEER_FRONT = "FRONT"
+STEER_DIFF = "DIFFERENTIAL"
+STEERING_TYPE = STEER_DIFF  # Set to STEER_DIFF to use differential steering
+# Limits for FRONT steering
+MAX_STEER_ANGLE = 45  # Degrees left/right from center
 # Wheel specifications in millimeters
-WHEEL_DIAMETER_MM = 43.2  # Standard EV3 tire, adjust as needed
+WHEEL_DIAMETER_MM = 56  # Standard EV3 tire, adjust as needed
 WHEEL_CIRCUMFERENCE_MM = WHEEL_DIAMETER_MM * math.pi
+
+# Track Width (for differential steering)
+# Physical distance between the centers of the two drive wheels.
+# Note: For skid steering or high-friction turns, the effective track width
+# may be larger than the physical width due to wheel slip.
+PHYSICAL_TRACK_WIDTH_MM = 185.0 
+TRACK_WIDTH_SCALE = 1.0  # Scale factor for effective track width (1.0 = physical, >1.0 for skid)
+EFFECTIVE_TRACK_WIDTH_MM = PHYSICAL_TRACK_WIDTH_MM * TRACK_WIDTH_SCALE
 
 # IMPORTANT: Gear ratio (although this is techinically incorrect) is defined as Wheel Rotations / Motor Rotations.
 # >1 means wheel turns faster than motor (speed increase).
@@ -30,33 +48,42 @@ GEAR_RATIO = 5.0
 MM_PER_MOTOR_DEGREE = (WHEEL_CIRCUMFERENCE_MM / 360.0) * GEAR_RATIO
 
 # Direction inverts
-INVERT_DRIVE = True
-INVERT_STEERING = True
-
-# Steering limits
-MAX_STEER_ANGLE = 45  # Degrees left/right from center
+INVERT_DRIVE = False
+INVERT_STEERING = False
 
 # Can geometry (meters)
 CAN_DIAMETER_M = 0.075  # rules: 7.0 to 8.0 cm
 OUTER_CAN_INSIDE_EDGE_M = 1.0
 
 # Calibration offsets
-DISTANCE_CORRECTION_M = 0.2  # Added to the requested target distance to correct systematic bias
+DISTANCE_CORRECTION_M = 0.0  # Added to the requested target distance to correct systematic bias
+
+# Path Following
+LOOKAHEAD_DIST_MM = 200.0
+TARGET_REACHED_TOLERANCE_MM = 20.0
 
 
 # PORT ASSIGNMENTS
 
-PORT_STEER_MOTOR = Port.A
-PORT_LEFT_MOTOR = Port.B
-PORT_RIGHT_MOTOR = Port.C
+PORT_STEER_MOTOR = None
+PORT_LEFT_MOTOR = Port.A
+PORT_RIGHT_MOTOR = Port.D
 PORT_GYRO_SENSOR = Port.S1
 
 
 # PID GAINS
 
-PID_HEADING_KP = 7
+# Front Steering PID
+PID_HEADING_KP = 7.0
 PID_HEADING_KI = 0.5
 PID_HEADING_KD = 0.1
+
+# Differential Steering PID
+# Input: Heading Error (deg) -> Output: Turn Rate (deg/s) or Differential Speed
+# Needs tuning separate from Front Steering.
+PID_DIFF_HEADING_KP = 10.0
+PID_DIFF_HEADING_KI = 0.0
+PID_DIFF_HEADING_KD = 0.2
 
 # Motion constraints
 """
@@ -79,14 +106,38 @@ to improve precision / accuracy of the run in general.
 MAX_SPEED_MM_S = 1400.0
 MAX_ACCEL_MM_S2 = 775.0
 MAX_DECEL_MM_S2 = 2000.0
+MAX_DIFF_SPEED_MM_S = 100.0 # Max speed difference between motors for diff steering
 
 # Logging
 LOG_INTERVAL_MS = 500
 
-
-
 # Gyro calibration
 GYRO_CAL_DURATION_MS = 5000
+GYRO_RESET_WAIT_MS = 100
+GYRO_CAL_LOOP_WAIT_MS = 20
+GYRO_CAL_SAMPLE_TIME_S = 0.02
+GYRO_CAL_BLINK_INTERVAL_MS = 150
+
+# UI Settings
+UI_BLINK_INTERVAL_MS = 500
+UI_PROGRESS_UPDATE_INTERVAL_MS = 150
+UI_SUMMARY_WAIT_MS = 20
+
+# Run Settings
+RUN_START_DELAY_MS = 200
+RUN_LOOP_WAIT_MS = 10
+RUN_TIMEOUT_MULTIPLIER = 2.0
+STALL_THRESHOLD_MM = 5.0
+STALL_WINDOW_MS = 1200
+
+# Strategy Settings
+BONUS_PATH_INTEGRATION_STEPS = 50
+
+# Input Settings
+DISTANCE_STEP_REGIONAL_M = 0.25
+DISTANCE_STEP_STATE_M = 0.10
+DISTANCE_STEP_NATIONAL_M = 0.01
+TIME_STEP_S = 0.50
 
 # Battery checks
 BATTERY_CHECK_ENABLED = True
@@ -95,14 +146,13 @@ MIN_BATTERY_VOLTAGE_V = 7.0
 # Hardware precheck
 HARDWARE_PRECHECK_ENABLED = True
 
-
 # EVENT BOUNDS (for user input validation)
-
 VALIDATION_ENABLED = True
 MIN_TARGET_DISTANCE_M = 7.0
 MAX_TARGET_DISTANCE_M = 10.0
 MIN_TARGET_TIME_S = 10.0
 MAX_TARGET_TIME_S = 20.0
+
 
 # UTILITIES
 

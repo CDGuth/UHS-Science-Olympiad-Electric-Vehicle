@@ -34,13 +34,13 @@ def get_default_run_config():
 def get_distance_step():
     level = EVENT_LEVEL.upper()
     if level in ("REGIONAL", "INVITATIONAL"):
-        return 0.25
+        return config.DISTANCE_STEP_REGIONAL_M
     if level == "STATE":
-        return 0.10
+        return config.DISTANCE_STEP_STATE_M
     if level == "NATIONAL":
-        return 0.01
-    return 0.10
+        return config.DISTANCE_STEP_NATIONAL_M
+    return config.DISTANCE_STEP_STATE_M
 
 
 def get_time_step():
-    return 0.50
+    return config.TIME_STEP_S

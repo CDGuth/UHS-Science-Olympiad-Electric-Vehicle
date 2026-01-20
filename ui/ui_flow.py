@@ -35,7 +35,8 @@ def collect_run_config(ev3, car, initial_config, runtime_input=True):
             if current_mode == config.MODE_BONUS:
                 screens.append(BonusScreen())
         screens.append(GyroScreen(car))
-        screens.append(SteeringScreen(car))
+        if car.steer_motor is not None:
+            screens.append(SteeringScreen(car))
         screens.append(ConfirmationScreen())
         screens.append(ReadyScreen())
         return screens
@@ -84,7 +85,7 @@ def collect_run_config(ev3, car, initial_config, runtime_input=True):
 
     index = 0
     timer = StopWatch(); timer.reset()
-    press_start = {Button.UP: None, Button.DOWN: None}
+    press_start = {Button.UP: 0, Button.DOWN: 0}
     last_repeat = {Button.UP: 0, Button.DOWN: 0}
     prev_pressed = {Button.UP: False, Button.DOWN: False}
     debounce_ms = 50
@@ -151,7 +152,7 @@ def collect_run_config(ev3, car, initial_config, runtime_input=True):
                 if not prev_pressed[button]:
                     press_start[button] = now
                     last_repeat[button] = 0
-                held_ms = now - (press_start.get(button) or now)
+                held_ms = now - press_start[button]
                 factor = accel_factor(scr.key, held_ms)
                 if last_repeat[button] == 0 or now - last_repeat[button] >= repeat_ms:
                     step = base * factor
@@ -160,7 +161,7 @@ def collect_run_config(ev3, car, initial_config, runtime_input=True):
                 prev_pressed[button] = True
             else:
                 prev_pressed[button] = False
-                press_start[button] = None
+                press_start[button] = 0
                 last_repeat[button] = 0
 
         handle_step(Button.UP, current_screen, lambda step: current_screen.on_up(state, step))

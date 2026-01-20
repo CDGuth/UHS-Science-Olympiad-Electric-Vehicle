@@ -16,6 +16,7 @@ from ui.run_status import show_progress
 from ui.run_summary_screen import show_summary
 from ui.common import show_warning
 import log_utils
+import math
 
 
 def _port_label(port):
@@ -42,7 +43,10 @@ def precheck_devices(ev3):
 
     try_create("Left motor on {}".format(_port_label(config.PORT_LEFT_MOTOR)), lambda: Motor(config.PORT_LEFT_MOTOR))
     try_create("Right motor on {}".format(_port_label(config.PORT_RIGHT_MOTOR)), lambda: Motor(config.PORT_RIGHT_MOTOR))
-    try_create("Steering motor on {}".format(_port_label(config.PORT_STEER_MOTOR)), lambda: Motor(config.PORT_STEER_MOTOR))
+    
+    if config.STEERING_TYPE == config.STEER_FRONT:
+        try_create("Steering motor on {}".format(_port_label(config.PORT_STEER_MOTOR)), lambda: Motor(config.PORT_STEER_MOTOR)) # pyright: ignore
+        
     try_create("Gyro on {}".format(_port_label(config.PORT_GYRO_SENSOR)), lambda: GyroSensor(config.PORT_GYRO_SENSOR))
 
     if missing:
@@ -85,7 +89,7 @@ def main():
     ))
     if run_config["mode"] == config.MODE_BONUS:
         log_utils.log("Bonus gap: {}m".format(run_config["bonus_gap_m"]))
-    wait(200)
+    wait(config.RUN_START_DELAY_MS)
 
     event_timer = StopWatch()
     event_timer.reset()
@@ -100,19 +104,19 @@ def main():
     last_progress_ms = 0
     log_interval_ms = run_config.get("log_interval_ms", config.LOG_INTERVAL_MS)
 
-    max_run_ms = int(strategy.target_time_s * 2000)  # 2.0x target time guard
-    stall_threshold_mm = 5.0
-    stall_window_ms = 1200
+    max_run_ms = int(strategy.target_time_s * config.MS_PER_SECOND * config.RUN_TIMEOUT_MULTIPLIER)  # 2.0x target time guard
+    stall_threshold_mm = config.STALL_THRESHOLD_MM
+    stall_window_ms = config.STALL_WINDOW_MS
     last_move_ms = 0
     last_dist_mm = 0.0
     loop_ms = 0
     dist_mm = 0.0
 
-    while not strategy.is_finished(run_timer.time() / 1000.0):
+    while not strategy.is_finished(run_timer.time() / config.MS_PER_SECOND):
         loop_ms = run_timer.time()
-        time_s = loop_ms / 1000.0
+        time_s = loop_ms / config.MS_PER_SECOND
 
-        if (loop_ms // 500) % 2 == 0:
+        if (loop_ms // config.UI_BLINK_INTERVAL_MS) % 2 == 0:
             car.ev3.light.on(config.Color.GREEN)
         else:
             car.ev3.light.off()
@@ -120,7 +124,8 @@ def main():
         car.update_sensors()
 
         dist_mm = car.get_distance()
-        target_v, target_h = strategy.get_target_state(time_s, dist_mm)
+        pose = car.get_pose()
+        target_v, target_h = strategy.get_target_state(time_s, pose)
 
         car.drive_speed(target_v)
         car.steer_heading(target_h)
@@ -131,7 +136,7 @@ def main():
             log_utils.log("Telemetry: t={:.2f}s, d={:.1f}mm, v={:.1f}mm/s, h={:.1f}deg".format(time_s, dist_mm, target_v, heading))
             last_log_ms = loop_ms
 
-        if loop_ms - last_progress_ms >= 150:
+        if loop_ms - last_progress_ms >= config.UI_PROGRESS_UPDATE_INTERVAL_MS:
             progress_fraction = min(1.0, dist_mm / max(1.0, strategy.total_path_length))
             show_progress(car.ev3, run_config.get("mode"), progress_fraction, time_s)
             last_progress_ms = loop_ms
@@ -151,23 +156,40 @@ def main():
             logger.event(event_timer.time(), "timeout_guard")
             break
 
-        wait(10)
+        wait(config.RUN_LOOP_WAIT_MS)
 
     logger.event(event_timer.time(), "complete")
     car.stop(brake=True)
     car.ev3.light.on(config.Color.RED)
 
-    total_time_s = loop_ms / 1000.0
+    total_time_s = loop_ms / config.MS_PER_SECOND
+
+    # Calculate final position error
+    final_pose = car.get_pose()
+    final_x_mm = final_pose[0]
+    final_y_mm = final_pose[1]
+    
+    # The effective target we are aiming for includes the correction constant
+    effective_target_m = run_config["target_distance_m"] + config.DISTANCE_CORRECTION_M
+    target_dist_mm = effective_target_m * config.MM_PER_METER
+    
+    # Error distance to (Target, 0)
+    dx = final_x_mm - target_dist_mm
+    dy = final_y_mm
+    dist_error_mm = math.sqrt(dx*dx + dy*dy)
+    dist_error_m = dist_error_mm / config.MM_PER_METER
+
     log_utils.log("Run complete.")
-    log_utils.log("Distance: {:.3f} m".format(dist_mm / 1000.0))
+    log_utils.log("Distance: {:.3f} m".format(dist_mm / config.MM_PER_METER))
+    log_utils.log("Dist Error: {:.3f} m".format(dist_error_m))
     log_utils.log("Time: {:.3f} s".format(total_time_s))
     if "target_time_s" in run_config:
         error_s = total_time_s - run_config["target_time_s"]
         log_utils.log("Time err: {:.3f} s".format(error_s))
-    show_summary(car.ev3, run_config.get("mode"), dist_mm / 1000.0, total_time_s, run_config.get("target_time_s"))
+    show_summary(car.ev3, run_config.get("mode"), dist_mm / config.MM_PER_METER, total_time_s, run_config.get("target_time_s"), distance_error_m=dist_error_m)
     log_utils.log("Press center to dismiss summary.")
     while Button.CENTER not in car.ev3.buttons.pressed():
-        wait(20)
+        wait(config.UI_SUMMARY_WAIT_MS)
 
 
 if __name__ == "__main__":
