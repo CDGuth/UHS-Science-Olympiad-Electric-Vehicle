@@ -27,7 +27,7 @@ STEERING_TYPE = STEER_DIFF  # Set to STEER_DIFF to use differential steering
 # Limits for FRONT steering
 MAX_STEER_ANGLE = 45  # Degrees left/right from center
 # Wheel specifications in millimeters
-WHEEL_DIAMETER_MM = 56  # Standard EV3 tire, adjust as needed
+WHEEL_DIAMETER_MM = 56  # adjust as needed
 WHEEL_CIRCUMFERENCE_MM = WHEEL_DIAMETER_MM * math.pi
 
 # Track Width (for differential steering)

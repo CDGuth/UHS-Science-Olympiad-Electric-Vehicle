@@ -95,8 +95,12 @@ class Car:
         return self.x_mm, self.y_mm, self.get_heading(), self.distance_mm
         
     def get_heading(self):
+        # Gyro angle on EV3 is clockwise-positive; invert so positive means CCW/left
+        # (consistent with our geometry and heading targets). Drift compensation
+        # follows the same sign convention.
         elapsed_s = self.heading_timer.time() / config.MS_PER_SECOND
-        return self.gyro.angle() - self.drift_rate_dps * elapsed_s
+        raw_angle = self.gyro.angle()
+        return -(raw_angle - self.drift_rate_dps * elapsed_s)
 
     def drive_speed(self, speed_mm_s):
         self.target_speed_mm_s = speed_mm_s
