@@ -37,7 +37,8 @@ class Car:
         
         self.target_speed_mm_s = 0.0 # Store speed for differential mixing
 
-        self.pid_integral = 0
+        self.pid_error_history = []
+        self.pid_integral = 0.0
         self.pid_last_error = 0
         self.last_time = 0
 
@@ -60,7 +61,8 @@ class Car:
         self.heading_timer.reset()
         
         self.distance_mm = 0.0
-        self.pid_integral = 0
+        self.pid_error_history = []
+        self.pid_integral = 0.0
         self.pid_last_error = 0
         self.pid_timer.reset()
         self.last_time = 0
@@ -132,7 +134,13 @@ class Car:
             kd = config.PID_DIFF_HEADING_KD
 
         p_term = kp * error
-        self.pid_integral += error * dt
+        
+        # Update sliding window integral
+        self.pid_error_history.append(error * dt)
+        if len(self.pid_error_history) > config.PID_INTEGRAL_WINDOW_SIZE:
+            self.pid_error_history.pop(0)
+        self.pid_integral = sum(self.pid_error_history)
+        
         i_term = ki * self.pid_integral
         derivative = (error - self.pid_last_error) / dt
         d_term = kd * derivative

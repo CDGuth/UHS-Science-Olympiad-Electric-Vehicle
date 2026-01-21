@@ -59,7 +59,7 @@ OUTER_CAN_INSIDE_EDGE_M = 1.0
 DISTANCE_CORRECTION_M = 0.0  # Added to the requested target distance to correct systematic bias
 
 # Path Following
-LOOKAHEAD_DIST_MM = 200.0
+LOOKAHEAD_DIST_MM = 2000.0
 TARGET_REACHED_TOLERANCE_MM = 20.0
 CREEP_SPEED_MM_S = 150.0  # Speed to close small gaps after time expires
 MIN_CRAWL_SPEED_MM_S = 50.0 # Absolute minimum speed to keep moving if not done
@@ -80,12 +80,13 @@ PORT_GYRO_SENSOR = Port.S1
 PID_HEADING_KP = 7.0
 PID_HEADING_KI = 0.5
 PID_HEADING_KD = 0.1
+PID_INTEGRAL_WINDOW_SIZE = 50  # Number of samples for sliding window integral
 
 # Differential Steering PID
 # Input: Heading Error (deg) -> Output: Turn Rate (deg/s) or Differential Speed
 # Needs tuning separate from Front Steering.
-PID_DIFF_HEADING_KP = 10.0
-PID_DIFF_HEADING_KI = 0.0
+PID_DIFF_HEADING_KP = 15.0
+PID_DIFF_HEADING_KI = 0.1
 PID_DIFF_HEADING_KD = 0.2
 
 # Motion constraints
@@ -109,7 +110,7 @@ to improve precision / accuracy of the run in general.
 MAX_SPEED_MM_S = 1400.0
 MAX_ACCEL_MM_S2 = 775.0
 MAX_DECEL_MM_S2 = 2000.0
-MAX_DIFF_SPEED_MM_S = 200.0 # Max speed difference between motors for diff steering
+MAX_DIFF_SPEED_MM_S = 400.0 # Max speed difference between motors for diff steering
 
 # Logging
 LOG_INTERVAL_MS = 50
@@ -144,7 +145,7 @@ TIME_STEP_S = 0.50
 
 # Battery checks
 BATTERY_CHECK_ENABLED = True
-MIN_BATTERY_VOLTAGE_V = 6.0
+MIN_BATTERY_VOLTAGE_V = 7.0
 
 # Hardware precheck
 HARDWARE_PRECHECK_ENABLED = True

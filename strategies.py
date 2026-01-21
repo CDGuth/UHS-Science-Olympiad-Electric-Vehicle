@@ -285,8 +285,11 @@ class RunStrategy:
         if math.sqrt(dx*dx + dy*dy) < config.TARGET_REACHED_TOLERANCE_MM and target_x >= self.path.target_dist_mm:
             target_heading = 0.0
         else:
-            target_heading = math.degrees(math.atan2(dy, dx))
-            
+             # Pure Pursuit: Points the vehicle towards the lookahead point on the path.
+             # If we are off-course (non-zero cross-track error), this vector naturally
+             # points back towards the path, inducing a corrective turn.
+             target_heading = math.degrees(math.atan2(dy, dx))
+             
         # 3. Calculate Curvature Feedforward
         target_kappa = self.path.get_curvature(x)
 
