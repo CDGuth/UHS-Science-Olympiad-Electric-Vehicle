@@ -111,7 +111,7 @@ class Car:
             self.right_motor.run(motor_speed_deg_s)
         # For DIFF Steering, we wait for steer_heading to apply the speed+turn mix
 
-    def steer_heading(self, target_heading):
+    def steer_heading(self, target_heading, curvature_mm=0.0):
         current_heading = self.get_heading()
         error = target_heading - current_heading
         
@@ -156,8 +156,17 @@ class Car:
             # v_l = v - adjustment
             # v_r = v + adjustment
             
+            # Feedforward: Calculate required turn rate from curvature and speed
+            # omega = v * kappa. (mm/s * 1/mm = rad/s)
+            
+            # Note: speed_mm_s might be low/zero, so feedforward scales naturally
+            target_v_mm_s = self.target_speed_mm_s
+            feedforward_rad_s = target_v_mm_s * curvature_mm
+            feedforward_deg_s = math.degrees(feedforward_rad_s)
+            
             # Use degrees/s directly for easier tuning relative to gyro:
-            omega_deg_s = pid_output
+            # Total Output = Feedforward (Physics) + PID (Error Correction)
+            omega_deg_s = feedforward_deg_s + pid_output
             
             # Apply steering inversion if requested
             if config.INVERT_STEERING:

@@ -61,6 +61,9 @@ DISTANCE_CORRECTION_M = 0.0  # Added to the requested target distance to correct
 # Path Following
 LOOKAHEAD_DIST_MM = 200.0
 TARGET_REACHED_TOLERANCE_MM = 20.0
+CREEP_SPEED_MM_S = 150.0  # Speed to close small gaps after time expires
+MIN_CRAWL_SPEED_MM_S = 50.0 # Absolute minimum speed to keep moving if not done
+
 
 
 # PORT ASSIGNMENTS
@@ -106,10 +109,10 @@ to improve precision / accuracy of the run in general.
 MAX_SPEED_MM_S = 1400.0
 MAX_ACCEL_MM_S2 = 775.0
 MAX_DECEL_MM_S2 = 2000.0
-MAX_DIFF_SPEED_MM_S = 100.0 # Max speed difference between motors for diff steering
+MAX_DIFF_SPEED_MM_S = 200.0 # Max speed difference between motors for diff steering
 
 # Logging
-LOG_INTERVAL_MS = 500
+LOG_INTERVAL_MS = 50
 
 # Gyro calibration
 GYRO_CAL_DURATION_MS = 5000
@@ -141,7 +144,7 @@ TIME_STEP_S = 0.50
 
 # Battery checks
 BATTERY_CHECK_ENABLED = True
-MIN_BATTERY_VOLTAGE_V = 7.0
+MIN_BATTERY_VOLTAGE_V = 6.0
 
 # Hardware precheck
 HARDWARE_PRECHECK_ENABLED = True

@@ -69,10 +69,14 @@ def main():
     if config.HARDWARE_PRECHECK_ENABLED:
         precheck_devices(ev3)
     car = Car(auto_calibrate=False, ev3=ev3)
-    logger = RunLogger()
 
     run_config = user_input.get_default_run_config()
     run_config = collect_run_config(car.ev3, car, run_config, runtime_input=user_input.USE_RUNTIME_INPUT)
+    
+    logger = RunLogger(
+        target_dist_m=run_config.get("target_distance_m", 0.0),
+        bonus_gap_m=run_config.get("bonus_gap_m", 0.0)
+    )
 
     if not user_input.USE_RUNTIME_INPUT:
         errors, warnings = config.validate_config(run_config)
@@ -100,9 +104,9 @@ def main():
 
     car.reset_odometry()
     run_timer = StopWatch(); run_timer.reset()
-    last_log_ms = 0
-    last_progress_ms = 0
     log_interval_ms = run_config.get("log_interval_ms", config.LOG_INTERVAL_MS)
+    last_log_ms = -log_interval_ms # Force first log at 0ms
+    last_progress_ms = 0
 
     max_run_ms = int(strategy.target_time_s * config.MS_PER_SECOND * config.RUN_TIMEOUT_MULTIPLIER)  # 2.0x target time guard
     stall_threshold_mm = config.STALL_THRESHOLD_MM
@@ -111,8 +115,9 @@ def main():
     last_dist_mm = 0.0
     loop_ms = 0
     dist_mm = 0.0
+    pose = car.get_pose()
 
-    while not strategy.is_finished(run_timer.time() / config.MS_PER_SECOND):
+    while not strategy.is_finished(run_timer.time() / config.MS_PER_SECOND, pose):
         loop_ms = run_timer.time()
         time_s = loop_ms / config.MS_PER_SECOND
 
@@ -125,15 +130,18 @@ def main():
 
         dist_mm = car.get_distance()
         pose = car.get_pose()
-        target_v, target_h = strategy.get_target_state(time_s, pose)
+        target_v, target_h, target_k = strategy.get_target_state(time_s, pose)
 
         car.drive_speed(target_v)
-        car.steer_heading(target_h)
+        car.steer_heading(target_h, curvature_mm=target_k)
 
         if loop_ms - last_log_ms >= log_interval_ms:
             heading = car.get_heading()
-            logger.state(loop_ms, dist_mm, target_v, target_h, heading, car.drift_rate_dps)
-            log_utils.log("Telemetry: t={:.2f}s, d={:.1f}mm, v={:.1f}mm/s, h={:.1f}deg".format(time_s, dist_mm, target_v, heading))
+            x_mm, y_mm, _, _ = pose
+            drift = car.drift_rate_dps
+            logger.state(loop_ms, x_mm, y_mm, dist_mm, target_v, target_h, heading, target_k, drift)
+            log_utils.log("Telemetry: t={:.2f}s, x={:.1f}, y={:.1f}, d={:.1f}, v={:.1f}, h_cmd={:.1f}, h={:.1f}, k={:.2e}, drift={:.3f}".format(
+                time_s, x_mm, y_mm, dist_mm, target_v, target_h, heading, target_k, drift))
             last_log_ms = loop_ms
 
         if loop_ms - last_progress_ms >= config.UI_PROGRESS_UPDATE_INTERVAL_MS:
