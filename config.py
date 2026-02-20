@@ -35,7 +35,7 @@ WHEEL_CIRCUMFERENCE_MM = WHEEL_DIAMETER_MM * math.pi
 # Note: For skid steering or high-friction turns, the effective track width
 # may be larger than the physical width due to wheel slip.
 PHYSICAL_TRACK_WIDTH_MM = 185.0 
-TRACK_WIDTH_SCALE = 1.0  # Scale factor for effective track width (1.0 = physical, >1.0 for skid)
+TRACK_WIDTH_SCALE = 1  # Scale factor for effective track width (1.0 = physical, >1.0 for skid)
 EFFECTIVE_TRACK_WIDTH_MM = PHYSICAL_TRACK_WIDTH_MM * TRACK_WIDTH_SCALE
 
 # IMPORTANT: Gear ratio (although this is techinically incorrect) is defined as Wheel Rotations / Motor Rotations.
@@ -56,10 +56,10 @@ CAN_DIAMETER_M = 0.075  # rules: 7.0 to 8.0 cm
 OUTER_CAN_INSIDE_EDGE_M = 1.0
 
 # Calibration offsets
-DISTANCE_CORRECTION_M = 0.0  # Added to the requested target distance to correct systematic bias
+DISTANCE_CORRECTION_M = 0.00  # Added to the requested target distance to correct systematic bias
 
 # Path Following
-LOOKAHEAD_DIST_MM = 2000.0
+LOOKAHEAD_DIST_MM = 20.0
 TARGET_REACHED_TOLERANCE_MM = 20.0
 CREEP_SPEED_MM_S = 150.0  # Speed to close small gaps after time expires
 MIN_CRAWL_SPEED_MM_S = 50.0 # Absolute minimum speed to keep moving if not done
@@ -85,8 +85,8 @@ PID_INTEGRAL_WINDOW_SIZE = 50  # Number of samples for sliding window integral
 # Differential Steering PID
 # Input: Heading Error (deg) -> Output: Turn Rate (deg/s) or Differential Speed
 # Needs tuning separate from Front Steering.
-PID_DIFF_HEADING_KP = 15.0
-PID_DIFF_HEADING_KI = 0.1
+PID_DIFF_HEADING_KP = 5.0
+PID_DIFF_HEADING_KI = 0.025
 PID_DIFF_HEADING_KD = 0.2
 
 # Motion constraints
