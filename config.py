@@ -27,14 +27,14 @@ STEERING_TYPE = STEER_DIFF  # Set to STEER_DIFF to use differential steering
 # Limits for FRONT steering
 MAX_STEER_ANGLE = 45  # Degrees left/right from center
 # Wheel specifications in millimeters
-WHEEL_DIAMETER_MM = 56  # adjust as needed
+WHEEL_DIAMETER_MM = 30  # adjust as needed
 WHEEL_CIRCUMFERENCE_MM = WHEEL_DIAMETER_MM * math.pi
 
 # Track Width (for differential steering)
 # Physical distance between the centers of the two drive wheels.
 # Note: For skid steering or high-friction turns, the effective track width
 # may be larger than the physical width due to wheel slip.
-PHYSICAL_TRACK_WIDTH_MM = 185.0 
+PHYSICAL_TRACK_WIDTH_MM = 140.0 
 TRACK_WIDTH_SCALE = 1  # Scale factor for effective track width (1.0 = physical, >1.0 for skid)
 EFFECTIVE_TRACK_WIDTH_MM = PHYSICAL_TRACK_WIDTH_MM * TRACK_WIDTH_SCALE
 
@@ -42,13 +42,13 @@ EFFECTIVE_TRACK_WIDTH_MM = PHYSICAL_TRACK_WIDTH_MM * TRACK_WIDTH_SCALE
 # >1 means wheel turns faster than motor (speed increase).
 # Example: If motor has 8 teeth and wheel gear has 16 teeth, ratio is 0.5.
 # If motor has 16 teeth and wheel gear has 8 teeth, ratio is 2.0.
-GEAR_RATIO = 5.0
+GEAR_RATIO = 20/12
 
 # Distance per motor degree for odometry.
 MM_PER_MOTOR_DEGREE = (WHEEL_CIRCUMFERENCE_MM / 360.0) * GEAR_RATIO
 
 # Direction inverts
-INVERT_DRIVE = False
+INVERT_DRIVE = True
 INVERT_STEERING = False
 
 # Can geometry (meters)
@@ -59,7 +59,7 @@ OUTER_CAN_INSIDE_EDGE_M = 1.0
 DISTANCE_CORRECTION_M = 0.00  # Added to the requested target distance to correct systematic bias
 
 # Path Following
-LOOKAHEAD_DIST_MM = 20.0
+LOOKAHEAD_DIST_MM = 200.0
 TARGET_REACHED_TOLERANCE_MM = 20.0
 CREEP_SPEED_MM_S = 150.0  # Speed to close small gaps after time expires
 MIN_CRAWL_SPEED_MM_S = 50.0 # Absolute minimum speed to keep moving if not done
@@ -71,7 +71,7 @@ MIN_CRAWL_SPEED_MM_S = 50.0 # Absolute minimum speed to keep moving if not done
 PORT_STEER_MOTOR = None
 PORT_LEFT_MOTOR = Port.A
 PORT_RIGHT_MOTOR = Port.D
-PORT_GYRO_SENSOR = Port.S1
+PORT_GYRO_SENSOR = Port.S4
 
 
 # PID GAINS
@@ -85,7 +85,7 @@ PID_INTEGRAL_WINDOW_SIZE = 50  # Number of samples for sliding window integral
 # Differential Steering PID
 # Input: Heading Error (deg) -> Output: Turn Rate (deg/s) or Differential Speed
 # Needs tuning separate from Front Steering.
-PID_DIFF_HEADING_KP = 5.0
+PID_DIFF_HEADING_KP = 1
 PID_DIFF_HEADING_KI = 0.025
 PID_DIFF_HEADING_KD = 0.2
 
@@ -95,7 +95,7 @@ Set based upon an acceleration / decceleration / max velocity test
 by running the motors at full power on level concrete. Acceleration
 was calculated over the period of the vehicle at rest to maximum
 velocity. Deceleration was calculated over the period of max
-velocity to rest. The results were:
+velocity to rest. The results were (old wheeled design):
 
 --- TEST RESULTS ---
 Starting Battery: 9.15 V (close to full charge but not 100%)
@@ -107,9 +107,9 @@ The limits set below are comfortably below the tested maximums.
 Deceleration is purposely kept low to avoid wheel slip and
 to improve precision / accuracy of the run in general.
 """
-MAX_SPEED_MM_S = 1400.0
-MAX_ACCEL_MM_S2 = 775.0
-MAX_DECEL_MM_S2 = 2000.0
+MAX_SPEED_MM_S = 1200.0
+MAX_ACCEL_MM_S2 = 800.0
+MAX_DECEL_MM_S2 = 1400.0
 MAX_DIFF_SPEED_MM_S = 400.0 # Max speed difference between motors for diff steering
 
 # Logging

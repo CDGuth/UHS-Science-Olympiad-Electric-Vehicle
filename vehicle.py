@@ -198,6 +198,14 @@ class Car:
             v_left_mm_s = base_mm_s - diff_mm_s
             v_right_mm_s = base_mm_s + diff_mm_s
 
+            # Prioritize steering: if any wheel exceeds max physical speed, reduce both speeds equally
+            # to maintain the same difference (same turn rate)
+            max_wheel_speed = max(v_left_mm_s, v_right_mm_s)
+            if max_wheel_speed > config.MAX_SPEED_MM_S:
+                reduction = max_wheel_speed - config.MAX_SPEED_MM_S
+                v_left_mm_s -= reduction
+                v_right_mm_s -= reduction
+
             # Clamp speeds so they cannot be negative (prevent reversing during steering)
             v_left_mm_s = max(0, v_left_mm_s)
             v_right_mm_s = max(0, v_right_mm_s)
