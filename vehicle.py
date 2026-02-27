@@ -37,9 +37,13 @@ class Car:
         
         self.target_speed_mm_s = 0.0 # Store speed for differential mixing
 
-        self.pid_error_history = []
-        self.pid_integral = 0.0
-        self.pid_last_error = 0
+        self.front_pid_error_history = []
+        self.front_pid_integral = 0.0
+        self.front_pid_last_error = 0.0
+
+        self.diff_pid_error_history = []
+        self.diff_pid_integral = 0.0
+        self.diff_pid_last_error = 0.0
         self.last_time = 0
 
         # Position tracking
@@ -61,9 +65,12 @@ class Car:
         self.heading_timer.reset()
         
         self.distance_mm = 0.0
-        self.pid_error_history = []
-        self.pid_integral = 0.0
-        self.pid_last_error = 0
+        self.front_pid_error_history = []
+        self.front_pid_integral = 0.0
+        self.front_pid_last_error = 0.0
+        self.diff_pid_error_history = []
+        self.diff_pid_integral = 0.0
+        self.diff_pid_last_error = 0.0
         self.pid_timer.reset()
         self.last_time = 0
 
@@ -128,24 +135,41 @@ class Car:
             kp = config.PID_HEADING_KP
             ki = config.PID_HEADING_KI
             kd = config.PID_HEADING_KD
+
+            self.front_pid_error_history.append(error * dt)
+            if len(self.front_pid_error_history) > config.PID_FRONT_INTEGRAL_WINDOW_SIZE:
+                self.front_pid_error_history.pop(0)
+            self.front_pid_integral = sum(self.front_pid_error_history)
+
+            i_term = ki * self.front_pid_integral
+            derivative = (error - self.front_pid_last_error) / dt
+            d_term = kd * derivative
+            self.front_pid_last_error = error
         else:
             kp = config.PID_DIFF_HEADING_KP
             ki = config.PID_DIFF_HEADING_KI
             kd = config.PID_DIFF_HEADING_KD
 
+            # Reset differential integral when crossing the target to avoid oscillation growth.
+            if self.diff_pid_last_error * error < 0:
+                self.diff_pid_error_history = []
+
+            self.diff_pid_error_history.append(error * dt)
+            if len(self.diff_pid_error_history) > config.PID_DIFF_INTEGRAL_WINDOW_SIZE:
+                self.diff_pid_error_history.pop(0)
+            self.diff_pid_integral = sum(self.diff_pid_error_history)
+
+            if self.diff_pid_integral > config.PID_DIFF_INTEGRAL_ABS_MAX:
+                self.diff_pid_integral = config.PID_DIFF_INTEGRAL_ABS_MAX
+            elif self.diff_pid_integral < -config.PID_DIFF_INTEGRAL_ABS_MAX:
+                self.diff_pid_integral = -config.PID_DIFF_INTEGRAL_ABS_MAX
+
+            i_term = ki * self.diff_pid_integral
+            derivative = (error - self.diff_pid_last_error) / dt
+            d_term = kd * derivative
+            self.diff_pid_last_error = error
+
         p_term = kp * error
-        
-        # Update sliding window integral
-        self.pid_error_history.append(error * dt)
-        if len(self.pid_error_history) > config.PID_INTEGRAL_WINDOW_SIZE:
-            self.pid_error_history.pop(0)
-        self.pid_integral = sum(self.pid_error_history)
-        
-        i_term = ki * self.pid_integral
-        derivative = (error - self.pid_last_error) / dt
-        d_term = kd * derivative
-        
-        self.pid_last_error = error
         
         pid_output = p_term + i_term + d_term
         

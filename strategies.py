@@ -23,8 +23,6 @@ class SpeedController:
         self.max_v = config.MAX_SPEED_MM_S
         self.max_accel = config.MAX_ACCEL_MM_S2
         self.max_decel = config.MAX_DECEL_MM_S2
-        self.creep_v = config.CREEP_SPEED_MM_S
-        self.min_crawl_v = config.MIN_CRAWL_SPEED_MM_S
 
     def compute_target_velocity(self, time_s, dist_traveled_mm):
         """
@@ -43,8 +41,8 @@ class SpeedController:
             v_req_time = 0.0
         elif time_remaining <= 0:
             # Time has expired, but we still have distance to cover.
-            # Move at creep speed to finish accurately.
-            v_req_time = self.creep_v
+            # Rely on safe stopping distance limit instead of crawling.
+            v_req_time = self.max_v
         else:
             # Normal operation: Try to match average speed needed
             v_req_time = dist_remaining / time_remaining
@@ -59,15 +57,6 @@ class SpeedController:
         # Choose the stricter of the requirements
         # If v_req_time is dangerously high compared to stopping distance, v_safe_limit takes over.
         target_v = min(v_req_time, v_safe_limit, self.max_v)
-
-        # Ensure we don't stall if we still have far to go and time is tight
-        if dist_remaining > config.TARGET_REACHED_TOLERANCE_MM and target_v < self.min_crawl_v:
-             if time_remaining > 0: 
-                 # If we have time, but v_req is low? (Calculated above).
-                 pass
-             else:
-                 # Over time, force creep
-                 target_v = max(target_v, self.creep_v)
 
         # 3. Apply Acceleration/Deceleration Limits (Rate Limiting)
         # We limit the change from the PREVIOUS COMMANDED velocity
@@ -108,8 +97,8 @@ class Path:
         return 0.0
     
     def _project_point(self, x, dist):
-        """Helper to clamp x to target and return basic line projection."""
-        return min(x + dist, self.target_dist_mm)
+        """Helper to return basic line projection."""
+        return x + dist
 
 
 class StraightPath(Path):
