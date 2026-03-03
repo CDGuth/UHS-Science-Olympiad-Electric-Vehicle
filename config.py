@@ -27,8 +27,10 @@ STEERING_TYPE = STEER_DIFF  # Set to STEER_DIFF to use differential steering
 # Limits for FRONT steering
 MAX_STEER_ANGLE = 45  # Degrees left/right from center
 # Wheel specifications in millimeters
-WHEEL_DIAMETER_MM = 56  # adjust as needed
-WHEEL_CIRCUMFERENCE_MM = WHEEL_DIAMETER_MM * math.pi
+PHYSICAL_WHEEL_DIAMETER_MM = 56.0  # adjust as needed
+WHEEL_DIAMETER_SCALE = 0.99  # Scale factor for effective wheel diameter (1.0 = physical)
+EFFECTIVE_WHEEL_DIAMETER_MM = PHYSICAL_WHEEL_DIAMETER_MM * WHEEL_DIAMETER_SCALE
+WHEEL_CIRCUMFERENCE_MM = EFFECTIVE_WHEEL_DIAMETER_MM * math.pi
 
 # Track Width (for differential steering)
 # Physical distance between the centers of the two drive wheels.
@@ -83,9 +85,9 @@ PID_FRONT_INTEGRAL_WINDOW_SIZE = 50  # Number of samples for front steering slid
 # Differential Steering PID
 # Input: Heading Error (deg) -> Output: Turn Rate (deg/s) or Differential Speed
 # Needs tuning separate from Front Steering.
-PID_DIFF_HEADING_KP = 0.3
+PID_DIFF_HEADING_KP = 0.5
 PID_DIFF_HEADING_KI = 0.004
-PID_DIFF_HEADING_KD = 0.2
+PID_DIFF_HEADING_KD = 0.4
 PID_DIFF_INTEGRAL_WINDOW_SIZE = 10  # Differential steering has its own sliding-window integral
 PID_DIFF_INTEGRAL_ABS_MAX = 120.0  # Clamp integral state to reduce windup
 
