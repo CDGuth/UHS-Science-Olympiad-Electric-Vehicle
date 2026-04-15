@@ -14,10 +14,15 @@ class ReadyScreen:
     shape = "play"
     show_in_nav = False
 
-    def __init__(self):
+    def __init__(self, car=None):
         self._blink = StopWatch()
         self._blink.reset()
         self._ev3 = None
+        self._car = car
+
+    def on_enter(self, ev3, state):
+        if self._car is not None:
+            self._car.stop(brake=True)
 
     def render(self, ev3, state, steps, current_index):
         self._ev3 = ev3

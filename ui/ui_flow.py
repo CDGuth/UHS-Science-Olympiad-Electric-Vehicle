@@ -38,7 +38,7 @@ def collect_run_config(ev3, car, initial_config, runtime_input=True):
         if car.steer_motor is not None:
             screens.append(SteeringScreen(car))
         screens.append(ConfirmationScreen())
-        screens.append(ReadyScreen())
+        screens.append(ReadyScreen(car))
         return screens
 
     state = dict(initial_config)
@@ -84,6 +84,7 @@ def collect_run_config(ev3, car, initial_config, runtime_input=True):
         return len(screens) - 1
 
     index = 0
+    last_screen_key = None
     timer = StopWatch(); timer.reset()
     press_start = {Button.UP: 0, Button.DOWN: 0}
     last_repeat = {Button.UP: 0, Button.DOWN: 0}
@@ -104,6 +105,10 @@ def collect_run_config(ev3, car, initial_config, runtime_input=True):
             index = len(screens) - 1
 
         current_screen = screens[index]
+        current_screen_key = current_screen.key
+        if current_screen_key != last_screen_key and hasattr(current_screen, "on_enter"):
+            current_screen.on_enter(ev3, state)
+            last_screen_key = current_screen_key
         if current_screen in nav_screens:
             nav_index = nav_screens.index(current_screen)
         else:
