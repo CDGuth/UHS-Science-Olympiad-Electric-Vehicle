@@ -4,7 +4,7 @@ Contains physical constants, port assignments, control gains, and validation hel
 !!!Runtime-editable run configuration now lives in user_input.py!!!
 """
 
-from pybricks.parameters import Port, Direction, Color # pyright: ignore[reportMissingImports]
+from pybricks.parameters import Port, Color # pyright: ignore[reportMissingImports]
 import math
 import log_utils
 
@@ -20,12 +20,8 @@ MS_PER_SECOND = 1000.0
 
 # ROBOT PHYSICAL CONSTANTS
 
-# Steering Configuration
-STEER_FRONT = "FRONT"
-STEER_DIFF = "DIFFERENTIAL"
-STEERING_TYPE = STEER_DIFF  # Set to STEER_DIFF to use differential steering
-# Limits for FRONT steering
-MAX_STEER_ANGLE = 45  # Degrees left/right from center
+# Steering configuration
+# Differential steering is the only supported steering mode.
 # Wheel specifications in millimeters
 PHYSICAL_WHEEL_DIAMETER_MM = 56.0  # adjust as needed
 WHEEL_DIAMETER_SCALE = 0.99  # Scale factor for effective wheel diameter (1.0 = physical)
@@ -68,7 +64,6 @@ TARGET_REACHED_TOLERANCE_MM = 20.0
 
 # PORT ASSIGNMENTS
 
-PORT_STEER_MOTOR = None
 PORT_LEFT_MOTOR = Port.A
 PORT_RIGHT_MOTOR = Port.D
 PORT_GYRO_SENSOR = Port.S4
@@ -76,26 +71,23 @@ PORT_GYRO_SENSOR = Port.S4
 
 # PID GAINS
 
-# Front Steering PID
-PID_HEADING_KP = 7.0
-PID_HEADING_KI = 0.5
-PID_HEADING_KD = 0.1
-PID_FRONT_INTEGRAL_WINDOW_SIZE = 50  # Number of samples for front steering sliding-window integral
-
 # Differential Steering PID
-# Input: Heading Error (deg) -> Output: Turn Rate (deg/s) or Differential Speed
-# Needs tuning separate from Front Steering.
-PID_DIFF_HEADING_KP = 0.5
-PID_DIFF_HEADING_KI = 0.004
-PID_DIFF_HEADING_KD = 0.4
-PID_DIFF_INTEGRAL_WINDOW_SIZE = 10  # Differential steering has its own sliding-window integral
+# Input: Heading Error (deg) -> Output: Turn Rate (deg/s) or Differential Speed.
+# Keep separate gains for STRAIGHT and BONUS runs for independent tuning.
+PID_DIFF_HEADING_STRAIGHT_KP = 0.5
+PID_DIFF_HEADING_STRAIGHT_KI = 0.004
+PID_DIFF_HEADING_STRAIGHT_KD = 0.25
+PID_DIFF_HEADING_BONUS_KP = 0.75
+PID_DIFF_HEADING_BONUS_KI = 0.004
+PID_DIFF_HEADING_BONUS_KD = 0.5
+PID_DIFF_INTEGRAL_WINDOW_SIZE = 50  # Differential steering has its own sliding-window integral
 PID_DIFF_INTEGRAL_ABS_MAX = 120.0  # Clamp integral state to reduce windup
 
 # Motion constraints
 
 MAX_SPEED_MM_S = 1200.0
 MAX_ACCEL_MM_S2 = 800.0
-MAX_DECEL_MM_S2 = 1400.0
+MAX_DECEL_MM_S2 = 800.0
 MAX_DIFF_SPEED_MM_S = 100.0 # Max speed difference between motors for diff steering
 
 # Logging

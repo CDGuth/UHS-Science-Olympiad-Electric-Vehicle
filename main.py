@@ -43,10 +43,7 @@ def precheck_devices(ev3):
 
     try_create("Left motor on {}".format(_port_label(config.PORT_LEFT_MOTOR)), lambda: Motor(config.PORT_LEFT_MOTOR))
     try_create("Right motor on {}".format(_port_label(config.PORT_RIGHT_MOTOR)), lambda: Motor(config.PORT_RIGHT_MOTOR))
-    
-    if config.STEERING_TYPE == config.STEER_FRONT:
-        try_create("Steering motor on {}".format(_port_label(config.PORT_STEER_MOTOR)), lambda: Motor(config.PORT_STEER_MOTOR)) # pyright: ignore
-        
+
     try_create("Gyro on {}".format(_port_label(config.PORT_GYRO_SENSOR)), lambda: GyroSensor(config.PORT_GYRO_SENSOR))
 
     if missing:
@@ -72,6 +69,7 @@ def main():
 
     run_config = user_input.get_default_run_config()
     run_config = collect_run_config(car.ev3, car, run_config, runtime_input=user_input.USE_RUNTIME_INPUT)
+    car.set_run_mode(run_config.get("mode"))
     
     logger = RunLogger(
         target_dist_m=run_config.get("target_distance_m", 0.0),

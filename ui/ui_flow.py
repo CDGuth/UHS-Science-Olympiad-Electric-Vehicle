@@ -12,7 +12,6 @@ from .distance_screen import DistanceScreen
 from .time_screen import TimeScreen
 from .bonus_screen import BonusScreen
 from .gyro_screen import GyroScreen
-from .steering_screen import SteeringScreen
 from .confirmation_screen import ConfirmationScreen
 from .ready_screen import ReadyScreen
 from .common import mark_complete, show_warning
@@ -35,8 +34,6 @@ def collect_run_config(ev3, car, initial_config, runtime_input=True):
             if current_mode == config.MODE_BONUS:
                 screens.append(BonusScreen())
         screens.append(GyroScreen(car))
-        if car.steer_motor is not None:
-            screens.append(SteeringScreen(car))
         screens.append(ConfirmationScreen())
         screens.append(ReadyScreen(car))
         return screens
@@ -57,7 +54,6 @@ def collect_run_config(ev3, car, initial_config, runtime_input=True):
         "target_time_s": "Target Time",
         "bonus_gap_m": "Bonus Gap",
         "gyro_calibration": "Gyro Calibration",
-        "steering_calibration": "Steering Align",
         "confirm_run": "Confirm Run",
     }
 
@@ -106,8 +102,9 @@ def collect_run_config(ev3, car, initial_config, runtime_input=True):
 
         current_screen = screens[index]
         current_screen_key = current_screen.key
-        if current_screen_key != last_screen_key and hasattr(current_screen, "on_enter"):
-            current_screen.on_enter(ev3, state)
+        if current_screen_key != last_screen_key:
+            if hasattr(current_screen, "on_enter"):
+                current_screen.on_enter(ev3, state)
             last_screen_key = current_screen_key
         if current_screen in nav_screens:
             nav_index = nav_screens.index(current_screen)
