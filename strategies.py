@@ -126,12 +126,11 @@ class BonusPath(Path):
         # Geometry Setup
         self.mid_x = self.target_dist_mm / 2.0
         
-        # Calculate Sagitta (S)
-        r_can_m = config.CAN_DIAMETER_M / 2.0
-        outer_center_m = config.OUTER_CAN_INSIDE_EDGE_M + r_can_m
-        inside_outer_edge_m = config.OUTER_CAN_INSIDE_EDGE_M - self.gap_m
-        inside_center_m = inside_outer_edge_m - r_can_m
-        mid_y_m = (outer_center_m + inside_center_m) / 2.0
+        # Calculate Sagitta (S) from can edge positions only.
+        # Rules define can bonus geometry by inside/outside edges, so can diameter is unnecessary.
+        outer_inside_edge_m = config.OUTER_CAN_INSIDE_EDGE_M
+        inside_outer_edge_m = outer_inside_edge_m - self.gap_m
+        mid_y_m = (outer_inside_edge_m + inside_outer_edge_m) / 2.0
         if mid_y_m <= 0:
             raise ValueError("Gap configuration invalid: Path crosses centerline.")
             

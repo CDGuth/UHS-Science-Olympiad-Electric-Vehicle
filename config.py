@@ -49,8 +49,8 @@ MM_PER_MOTOR_DEGREE = (WHEEL_CIRCUMFERENCE_MM / 360.0) * GEAR_RATIO
 INVERT_DRIVE = True
 INVERT_STEERING = False
 
-# Can geometry (meters)
-CAN_DIAMETER_M = 0.075  # rules: 7.0 to 8.0 cm
+# Can bonus geometry (meters)
+# Rules define placement/scoring by edge distances along the bonus line.
 OUTER_CAN_INSIDE_EDGE_M = 1.0
 
 # Calibration offsets
@@ -77,9 +77,9 @@ PORT_GYRO_SENSOR = Port.S4
 PID_DIFF_HEADING_STRAIGHT_KP = 0.5
 PID_DIFF_HEADING_STRAIGHT_KI = 0.004
 PID_DIFF_HEADING_STRAIGHT_KD = 0.25
-PID_DIFF_HEADING_BONUS_KP = 0.75
+PID_DIFF_HEADING_BONUS_KP = 0.5
 PID_DIFF_HEADING_BONUS_KI = 0.004
-PID_DIFF_HEADING_BONUS_KD = 0.5
+PID_DIFF_HEADING_BONUS_KD = 0.25
 PID_DIFF_INTEGRAL_WINDOW_SIZE = 50  # Differential steering has its own sliding-window integral
 PID_DIFF_INTEGRAL_ABS_MAX = 120.0  # Clamp integral state to reduce windup
 

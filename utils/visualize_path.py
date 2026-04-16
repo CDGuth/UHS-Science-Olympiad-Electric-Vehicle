@@ -18,7 +18,6 @@ except ImportError:
     print("Warning: Could not import config.py. Using default values.")
     class MockConfig:
         MM_PER_METER = 1000.0
-        CAN_DIAMETER_M = 0.075
         OUTER_CAN_INSIDE_EDGE_M = 1.0
         DISTANCE_CORRECTION_M = 0.2
     config = MockConfig()
@@ -27,12 +26,10 @@ def get_bonus_path(target_dist_m, bonus_gap_m):
     target_dist_mm = (target_dist_m + config.DISTANCE_CORRECTION_M) * config.MM_PER_METER
     mid_x = target_dist_mm / 2.0
     
-    # Calculate Sagitta (S) - Y offset at cans
-    r_can_m = config.CAN_DIAMETER_M / 2.0
-    outer_center_m = config.OUTER_CAN_INSIDE_EDGE_M + r_can_m
-    inside_outer_edge_m = config.OUTER_CAN_INSIDE_EDGE_M - bonus_gap_m
-    inside_center_m = inside_outer_edge_m - r_can_m
-    mid_y_m = (outer_center_m + inside_center_m) / 2.0
+    # Calculate Sagitta (S) from bonus-line edge positions only.
+    outer_inside_edge_m = config.OUTER_CAN_INSIDE_EDGE_M
+    inside_outer_edge_m = outer_inside_edge_m - bonus_gap_m
+    mid_y_m = (outer_inside_edge_m + inside_outer_edge_m) / 2.0
     sagitta_mm = mid_y_m * config.MM_PER_METER
 
     # Segment 1: Cosine Curve (0 to mid_x)
@@ -117,17 +114,20 @@ def visualize(target_dist_m=8.0, bonus_gap_m=0.2, telemetry_path=None):
     plt.plot(corrected_dist_mm, 0, 'rx', markersize=10, markeredgewidth=2, label="Target Point (Corrected)")
     plt.plot(target_dist_m * config.MM_PER_METER, 0, 'ro', alpha=0.3, label="Target Point (Raw)")
 
-    # Bonus Cans
+    # Bonus gate edges (rules-defined geometry)
     mid_x_mm = corrected_dist_mm / 2.0
-    r_can_mm = (config.CAN_DIAMETER_M / 2.0) * config.MM_PER_METER
-    outer_can_y = (config.OUTER_CAN_INSIDE_EDGE_M) * config.MM_PER_METER + r_can_mm
-    inner_can_y = outer_can_y - (2 * r_can_mm + bonus_gap_m * config.MM_PER_METER)
-    
-    # Draw cans
-    circle_outer = patches.Circle((mid_x_mm, outer_can_y), r_can_mm, color='orange', alpha=0.5, label="Outer Can")
-    circle_inner = patches.Circle((mid_x_mm, inner_can_y), r_can_mm, color='orange', alpha=0.5, label="Inner Can")
-    plt.gca().add_patch(circle_outer)
-    plt.gca().add_patch(circle_inner)
+    outer_inside_edge_y_mm = config.OUTER_CAN_INSIDE_EDGE_M * config.MM_PER_METER
+    inner_outside_edge_y_mm = outer_inside_edge_y_mm - (bonus_gap_m * config.MM_PER_METER)
+    plt.plot(mid_x_mm, outer_inside_edge_y_mm, 'o', color='orange', label="Outer Can Inside Edge")
+    plt.plot(mid_x_mm, inner_outside_edge_y_mm, 'o', color='brown', label="Inner Can Outside Edge")
+    plt.plot(
+        [mid_x_mm, mid_x_mm],
+        [inner_outside_edge_y_mm, outer_inside_edge_y_mm],
+        color='orange',
+        linestyle=':',
+        linewidth=1.5,
+        label="Bonus Gap"
+    )
 
     # Ideal Path
     px, py, S = get_bonus_path(target_dist_m, bonus_gap_m)
