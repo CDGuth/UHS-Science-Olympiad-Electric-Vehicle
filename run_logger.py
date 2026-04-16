@@ -4,10 +4,12 @@ from pybricks.tools import DataLog # pyright: ignore[reportMissingImports]
 
 
 class RunLogger:
-    def __init__(self, target_dist_m=0.0, bonus_gap_m=0.0):
-        self.target_dist_m = target_dist_m
-        self.bonus_gap_m = bonus_gap_m
-        self.telemetry = DataLog(
+    def __init__(self, run_settings=None):
+        self.run_settings = dict(run_settings or {})
+        self.run_setting_keys = tuple(self.run_settings.keys())
+        self.run_setting_values = tuple(self.run_settings[k] for k in self.run_setting_keys)
+
+        telemetry_headers = [
             "ms",
             "x_mm",
             "y_mm",
@@ -17,8 +19,11 @@ class RunLogger:
             "heading_deg",
             "curvature_cmd_mm",
             "drift_dps",
-            "target_dist_m",
-            "bonus_gap_m",
+        ]
+        telemetry_headers.extend(self.run_setting_keys)
+
+        self.telemetry = DataLog(
+            *telemetry_headers,
             name="telemetry",
             timestamp=False,
         )
@@ -28,7 +33,7 @@ class RunLogger:
         self.events.log(ms, message)
 
     def state(self, ms, x_mm, y_mm, dist_mm, vel_cmd, heading_cmd, heading_deg, curvature_cmd_mm, drift_dps):
-        self.telemetry.log(
+        values = [
             ms,
             x_mm,
             y_mm,
@@ -38,6 +43,6 @@ class RunLogger:
             heading_deg,
             curvature_cmd_mm,
             drift_dps,
-            self.target_dist_m,
-            self.bonus_gap_m,
-        )
+        ]
+        values.extend(self.run_setting_values)
+        self.telemetry.log(*values)

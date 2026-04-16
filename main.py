@@ -70,18 +70,23 @@ def main():
     run_config = user_input.get_default_run_config()
     run_config = collect_run_config(car.ev3, car, run_config, runtime_input=user_input.USE_RUNTIME_INPUT)
     car.set_run_mode(run_config.get("mode"))
-    
-    logger = RunLogger(
-        target_dist_m=run_config.get("target_distance_m", 0.0),
-        bonus_gap_m=run_config.get("bonus_gap_m", 0.0)
-    )
+
+    corrected_distance_m = run_config["target_distance_m"] + config.DISTANCE_CORRECTION_M
+    run_settings = dict(run_config)
+    run_settings["distance_correction_m"] = config.DISTANCE_CORRECTION_M
+    run_settings["effective_target_distance_m"] = corrected_distance_m
+    run_settings["log_interval_ms"] = run_config.get("log_interval_ms", config.LOG_INTERVAL_MS)
+    run_settings["run_timeout_multiplier"] = config.RUN_TIMEOUT_MULTIPLIER
+    run_settings["event_level"] = user_input.EVENT_LEVEL
+    run_settings["runtime_input_enabled"] = user_input.USE_RUNTIME_INPUT
+
+    logger = RunLogger(run_settings=run_settings)
 
     if not user_input.USE_RUNTIME_INPUT:
         errors, warnings = config.validate_config(run_config)
         if errors or warnings:
             show_warning(car.ev3, "Config Warning", [e["message"] for e in errors] + warnings)
     strategy = get_strategy(run_config)
-    corrected_distance_m = run_config["target_distance_m"] + config.DISTANCE_CORRECTION_M
     log_utils.log("Strategy initialized: {}".format(run_config["mode"]))
     log_utils.log("Target: {:.3f}m (raw {:.3f}m, corr {:+.3f}m) in {:.2f}s".format(
         corrected_distance_m,
