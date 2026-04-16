@@ -41,7 +41,6 @@ class GyroScreen:
         drift = self.car.calibrate_gyro_drift(progress_cb=progress)
         state["drift_dps"] = drift
         mark_complete(state, self.key)
-        log_utils.log("Gyro calibrated; drift={:.4f} dps".format(drift))
 
     def _render_progress(self, fraction):
         if not self.ev3:
